@@ -223,7 +223,7 @@ class MongoObject(object):
         return self.db
 
     def close_connection(self, response):
-        self.connecton.end_request()
+        self.connection.end_request()
         return response
 
     def clear(self):
