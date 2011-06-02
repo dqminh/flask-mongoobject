@@ -7,6 +7,7 @@ Flask Extension for MongoDB
 
 Inspiration:
 https://github.com/slacy/minimongo/
+https://github.com/mitsuhiko/flask-sqlalchemy
 
 :copyright: (c) 2011 by dqminh.
 :license: MIT, see LICENSE for more details.
