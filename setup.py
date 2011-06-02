@@ -18,10 +18,10 @@ from setuptools import setup
 setup(
     name='Flask-MongoObject',
     version='0.1',
-    url='<enter URL here>',
+    url='https://github.com/dqminh/flask-mongoobject',
     license='MIT',
     author='dqminh',
-    author_email='your-email-here@example.com',
+    author_email='dqminh89@gmail.com',
     description='<enter short description here>',
     long_description=__doc__,
     packages=['flaskext'],
@@ -29,7 +29,8 @@ setup(
     zip_safe=False,
     platforms='any',
     install_requires=[
-        'Flask'
+        'Flask',
+        'pymongo'
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
