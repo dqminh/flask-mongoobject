@@ -12,7 +12,7 @@ https://github.com/mitsuhiko/flask-sqlalchemy
 :copyright: (c) 2011 by Daniel, Dao Quang Minh (dqminh).
 :license: MIT, see LICENSE for more details.
 """
-from __future__ import with_statement, absolute_import
+from __future__ import absolute_import
 from bson.dbref import DBRef
 from bson.son import SON
 from pymongo import Connection
@@ -20,7 +20,7 @@ from pymongo.collection import Collection
 from pymongo.cursor import Cursor
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
-from flask import abort
+from flask import abort, _request_ctx_stack
 
 
 class AttrDict(dict):
@@ -145,7 +145,8 @@ class AutoReferenceObject(AutoReference):
 
 class BaseQuery(Collection):
     """
-    `BaseQuery` extends :class
+    `BaseQuery` extends :class:`pymongo.Collection` that replaces all results
+    coming from database with instance of :class:`Model`
     """
 
     def __init__(self, *args, **kwargs):
@@ -172,7 +173,11 @@ class BaseQuery(Collection):
 
 
 class _QueryProperty(object):
-
+    """
+    Represent :attr:`Model.query` that dynamically instantiate
+    :attr:`Model.query_class` so that we can do things like
+    `Model.query.find_one`
+    """
     def __init__(self, mongo):
         self.mongo = mongo
 
@@ -184,7 +189,10 @@ class _QueryProperty(object):
 
 
 class Model(AttrDict):
-    """Base class for custom user models."""
+    """
+    Base class for custom user models. Provide convenience ActiveRecord
+    methods such as :attr:`save`, :attr:`remove`
+    """
     #: Query class
     query_class = BaseQuery
     #: instance of :attr:`query_class`
@@ -227,15 +235,24 @@ class MongoObject(object):
         # initialize connection and Model properties
         self.app = app
         self.mapper = {}
-        self.init_connection()
+        self.connect()
+        self.app.before_request(self.connect)
+        self.app.after_request(self.close_connection)
 
-    def init_connection(self):
-        self.connection = Connection(self.app.config['MONGODB_HOST'])
+    def connect(self):
+        ctx = _request_ctx_stack.top
+        if ctx is not None:
+            ctx.connection = Connection(self.app.config['MONGODB_HOST'])
 
     def make_model(self):
         model = Model
         model.query = _QueryProperty(self)
         return model
+
+    @property
+    def connection(self):
+        ctx = _request_ctx_stack.top
+        return ctx.connection
 
     @property
     def session(self):

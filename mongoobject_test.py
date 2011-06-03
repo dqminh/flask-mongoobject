@@ -1,5 +1,4 @@
-from attest import Tests
-from attest import assert_hook
+from attest import Tests, assert_hook
 import flask
 from flaskext.attest import request_context
 from flaskext.mongoobject import AttrDict, MongoObject
