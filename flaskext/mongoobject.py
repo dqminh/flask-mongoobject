@@ -22,6 +22,9 @@ from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
 from flask import abort
 
+def to_json(obj):
+    pass
+
 
 class AttrDict(dict):
     """
@@ -73,6 +76,9 @@ class AttrDict(dict):
         # convert it to one
         if isinstance(value, dict) and not isinstance(value, AttrDict):
             new_value = AttrDict(value)
+        elif isinstance(value, list):
+            for i, item in enumerate(value):
+                value[i] = AttrDict(item)
         return super(AttrDict, self).__setitem__(key, new_value)
 
 
@@ -199,6 +205,11 @@ class Model(AttrDict):
     query = None
     #: name of this model collection
     __collection__ = None
+
+    @property
+    def id(self):
+        if getattr(self, "_id", None):
+            return str(self._id)
 
     def __init__(self, *args, **kwargs):
         assert 'query_class' not in kwargs
