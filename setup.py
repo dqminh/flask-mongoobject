@@ -2,14 +2,14 @@
 Flask-MongoObject
 -----------------
 
-Description goes here...
+access MongoDB from your Flask application
 
 Links
 `````
 
 * `documentation <http://packages.python.org/Flask-MongoObject>`_
 * `development version
-  <http://github.com/USERNAME/REPOSITORY/zipball/master#egg=Flask-MongoObject-dev>`_
+  <http://github.com/dqminh/flask-mongoobject/zipball/master#egg=Flask-MongoObject-dev>`_
 
 """
 from setuptools import setup

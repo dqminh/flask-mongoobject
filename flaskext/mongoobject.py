@@ -20,7 +20,7 @@ from pymongo.collection import Collection
 from pymongo.cursor import Cursor
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
-from flask import abort, _request_ctx_stack
+from flask import abort
 
 
 class AttrDict(dict):
@@ -236,13 +236,10 @@ class MongoObject(object):
         self.app = app
         self.mapper = {}
         self.connect()
-        self.app.before_request(self.connect)
         self.app.after_request(self.close_connection)
 
     def connect(self):
-        ctx = _request_ctx_stack.top
-        if ctx is not None:
-            ctx.connection = Connection(self.app.config['MONGODB_HOST'])
+        self.connection = Connection(self.app.config['MONGODB_HOST'])
 
     def init_connection(self):
         self.connection = Connection(self.app.config['MONGODB_HOST'])
@@ -251,11 +248,6 @@ class MongoObject(object):
         model = Model
         model.query = _QueryProperty(self)
         return model
-
-    @property
-    def connection(self):
-        ctx = _request_ctx_stack.top
-        return ctx.connection
 
     @property
     def session(self):
