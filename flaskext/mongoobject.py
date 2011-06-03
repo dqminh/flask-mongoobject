@@ -244,6 +244,9 @@ class MongoObject(object):
         if ctx is not None:
             ctx.connection = Connection(self.app.config['MONGODB_HOST'])
 
+    def init_connection(self):
+        self.connection = Connection(self.app.config['MONGODB_HOST'])
+
     def make_model(self):
         model = Model
         model.query = _QueryProperty(self)
