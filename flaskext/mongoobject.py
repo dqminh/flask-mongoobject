@@ -3,13 +3,13 @@
 flaskext.mongoobject
 ~~~~~~~~~~~~~~~~~~~~
 
-Flask Extension for MongoDB
+Add basic MongoDB support to your Flask application.
 
 Inspiration:
 https://github.com/slacy/minimongo/
 https://github.com/mitsuhiko/flask-sqlalchemy
 
-:copyright: (c) 2011 by dqminh.
+:copyright: (c) 2011 by Daniel, Dao Quang Minh (dqminh).
 :license: MIT, see LICENSE for more details.
 """
 from __future__ import with_statement, absolute_import
@@ -24,6 +24,10 @@ from flask import abort
 
 
 class AttrDict(dict):
+    """
+    Base object that represents a MongoDB document. The object will behave both
+    like a dict `x['y']` and like an object `x.y`
+    """
     def __init__(self, initial=None, **kwargs):
         # Make sure that during initialization, that we recursively apply
         # AttrDict.  Maybe this could be better done with the builtin
@@ -32,7 +36,6 @@ class AttrDict(dict):
             for key, value in initial.iteritems():
                 # Can't just say self[k] = v here b/c of recursion.
                 self.__setitem__(key, value)
-
         # Process the other arguments (assume they are also default values).
         # This is the same behavior as the regular dict constructor.
         for key, value in kwargs.iteritems():
@@ -65,8 +68,9 @@ class AttrDict(dict):
             raise AttributeError(excn)
 
     def __setitem__(self, key, value):
-        # Coerce all nested dict-valued fields into AttrDicts
         new_value = value
+        # if the nested attribute is not an :class: `AttrDict` already,
+        # convert it to one
         if isinstance(value, dict) and not isinstance(value, AttrDict):
             new_value = AttrDict(value)
         return super(AttrDict, self).__setitem__(key, new_value)
@@ -74,26 +78,42 @@ class AttrDict(dict):
 
 class MongoCursor(Cursor):
     """
-    A cursor that will return an instance of :attr:`wrapper_class` instead of
+    A cursor that will return an instance of :attr:`as_class` instead of
     `dict`
     """
     def __init__(self, *args, **kwargs):
-        self.document_class = kwargs.pop('as_class')
+        self.as_class = kwargs.pop('as_class')
         super(MongoCursor, self).__init__(*args, **kwargs)
 
     def next(self):
         data = super(MongoCursor, self).next()
-        return self.document_class(data)
+        return self.as_class(data)
 
     def __getitem__(self, index):
         item = super(MongoCursor, self).__getitem__(index)
         if isinstance(index, slice):
             return item
         else:
-            return self.document_class(item)
+            return self.as_class(item)
 
 
 class AutoReferenceObject(AutoReference):
+    """
+    Transparently reference and de-reference already saved embedded objects.
+
+    This manipulator should probably only be used when the NamespaceInjector is
+    also being used, otherwise it doesn't make too much sense - documents can
+    only be auto-referenced if they have an `_ns` field.
+
+    If the document should be an instance of a :class:`flaskext.mongoobject.Model`
+    then we will transform it into a model's instance too.
+
+    NOTE: this will behave poorly if you have a circular reference.
+
+    TODO: this only works for documents that are in the same database. To fix
+    this we'll need to add a DatabaseInjector that adds `_db` and then make
+    use of the optional `database` support for DBRefs.
+    """
 
     def __init__(self, mongo):
         self.mongo = mongo
@@ -102,14 +122,15 @@ class AutoReferenceObject(AutoReference):
     def transform_outgoing(self, son, collection):
         def transform_value(value):
             if isinstance(value, DBRef):
-                data = self.__database.dereference(value)
-                return self.mongo.models_map[data['_ns']](data)
+                return self.__database.dereference(value)
             elif isinstance(value, list):
                 return [transform_value(v) for v in value]
             elif isinstance(value, dict):
                 if value.get('_ns', None):
-                    return self.mongo.models_map[value['_ns']](
-                        transform_dict(SON(value)))
+                    # if the collection has a `Model` mapper
+                    cls = self.mongo.mapper.get(value['_ns'], None)
+                    if cls:
+                        return cls(transform_dict(SON(value)))
                 return transform_dict(SON(value))
             return value
 
@@ -123,6 +144,9 @@ class AutoReferenceObject(AutoReference):
 
 
 class BaseQuery(Collection):
+    """
+    `BaseQuery` extends :class
+    """
 
     def __init__(self, *args, **kwargs):
         self.document_class = kwargs.pop('document_class')
@@ -153,7 +177,7 @@ class _QueryProperty(object):
         self.mongo = mongo
 
     def __get__(self, instance, owner):
-        self.mongo.models_map[owner.__collection__] = owner
+        self.mongo.mapper[owner.__collection__] = owner
         return owner.query_class(database=self.mongo.session,
                                  name=owner.__collection__,
                                  document_class=owner)
@@ -202,7 +226,7 @@ class MongoObject(object):
         app.config.setdefault('MONGODB_AUTOREF', True)
         # initialize connection and Model properties
         self.app = app
-        self.models_map = {}
+        self.mapper = {}
         self.init_connection()
 
     def init_connection(self):
