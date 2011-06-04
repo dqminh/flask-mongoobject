@@ -22,10 +22,6 @@ from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
 from flask import abort
 
-def to_json(obj):
-    pass
-
-
 class AttrDict(dict):
     """
     Base object that represents a MongoDB document. The object will behave both
@@ -133,7 +129,7 @@ class AutoReferenceObject(AutoReference):
                 return [transform_value(v) for v in value]
             elif isinstance(value, dict):
                 if value.get('_ns', None):
-                    # if the collection has a `Model` mapper
+                    # if the collection has a :class:`Model` mapper
                     cls = self.mongo.mapper.get(value['_ns'], None)
                     if cls:
                         return cls(transform_dict(SON(value)))
@@ -188,7 +184,6 @@ class _QueryProperty(object):
         self.mongo = mongo
 
     def __get__(self, instance, owner):
-        self.mongo.mapper[owner.__collection__] = owner
         return owner.query_class(database=self.mongo.session,
                                  name=owner.__collection__,
                                  document_class=owner)
@@ -238,6 +233,7 @@ class MongoObject(object):
             self.app = app
             self.init_app(app)
         self.Model = self.make_model()
+        self.mapper = {}
 
     def init_app(self, app):
         app.config.setdefault('MONGODB_HOST', "mongodb://localhost:27017")
@@ -245,7 +241,6 @@ class MongoObject(object):
         app.config.setdefault('MONGODB_AUTOREF', True)
         # initialize connection and Model properties
         self.app = app
-        self.mapper = {}
         self.connect()
         self.app.after_request(self.close_connection)
 
@@ -268,6 +263,11 @@ class MongoObject(object):
                 self.db.add_son_manipulator(NamespaceInjector())
                 self.db.add_son_manipulator(AutoReferenceObject(self))
         return self.db
+
+    def set_mapper(self, model):
+        # Set up mapper for model, so when ew retrieve documents from database,
+        # we will know how to map them to model object based on `_ns` fields
+        self.mapper[model.__collection__] = model
 
     def close_connection(self, response):
         self.connection.end_request()

@@ -13,6 +13,9 @@ class TestModel(db.Model):
     __collection__ = "tests"
 
 
+db.set_mapper(TestModel)
+
+
 @request_context
 def setup_app():
     app.config['MONGODB_HOST'] = "mongodb://localhost:27017"
@@ -24,6 +27,7 @@ def setup_app():
 
 mongounit = Tests()
 mongointegration = Tests(contexts=[setup_app])
+
 
 @mongointegration.context
 def init_db():
@@ -112,6 +116,7 @@ def should_handle_auto_dbref(client):
     parent.save()
     child = TestModel(test="test", parent=parent)
     child.save()
+
 
     child = TestModel.query.find_one({"test": "test"})
     assert child.parent.test == "hello"
