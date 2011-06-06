@@ -123,6 +123,18 @@ def should_handle_auto_dbref(client):
     assert child.parent.__class__.__name__ == "TestModel"
     assert type(child.parent) == TestModel
 
+@mongointegration.test
+def should_handle_auto_dbref_inside_a_list(client):
+    parent = TestModel(test="hellotest")
+    parent.save()
+    child = TestModel(test="testing", parents=[parent], parent=parent)
+    child.save()
+
+    child = TestModel.query.find_one({"test": "testing"})
+    print child.parents[0]
+    assert child.parents[0].test == "hellotest"
+    assert child.parents[0].__class__.__name__ == "TestModel"
+    assert type(child.parents[0]) == TestModel
 
 if __name__ == '__main__':
     mongounit.run()

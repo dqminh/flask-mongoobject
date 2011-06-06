@@ -74,7 +74,8 @@ class AttrDict(dict):
             new_value = AttrDict(value)
         elif isinstance(value, list):
             for i, item in enumerate(value):
-                value[i] = AttrDict(item)
+                if not isinstance(item, AttrDict):
+                    value[i] = AttrDict(item)
         return super(AttrDict, self).__setitem__(key, new_value)
 
 
@@ -124,7 +125,7 @@ class AutoReferenceObject(AutoReference):
     def transform_outgoing(self, son, collection):
         def transform_value(value):
             if isinstance(value, DBRef):
-                return self.__database.dereference(value)
+                return transform_value(self.__database.dereference(value))
             elif isinstance(value, list):
                 return [transform_value(v) for v in value]
             elif isinstance(value, dict):
