@@ -54,6 +54,11 @@ def convert_list_with_nested_dict():
     test = AttrDict(a=[{"b": {"c": "d"}}])
     assert test.a[0].b.c == "d"
 
+@mongounit.test
+def convert_list():
+    test = AttrDict(a=["test", "hello"])
+    assert test.a[0] == "test"
+
 
 @mongointegration.test
 def setup_database_properly(client):
