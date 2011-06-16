@@ -97,7 +97,9 @@ html_theme = 'flask_small'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+html_theme_options = {
+    'github_fork': 'dqminh/flask-mongoobject'
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 html_theme_path = ['_themes']
@@ -179,8 +181,8 @@ htmlhelp_basename = 'Flask-MongoObjectdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Flask-MongoObject.tex', u'Flask-MongoObject Documentation',
-   u'Daniel, Dao Quang Minh', 'manual'),
+    ('index', 'Flask-MongoObject.tex', u'Flask-MongoObject Documentation',
+     u'Daniel, Dao Quang Minh', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
