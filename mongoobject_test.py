@@ -56,6 +56,11 @@ def convert_list_with_nested_dict():
     test = AttrDict(a=[{"b": {"c": "d"}}])
     assert test.a[0].b.c == "d"
 
+@mongounit.test
+def convert_list():
+    test = AttrDict(a=["test", "hello"])
+    assert test.a[0] == "test"
+
 
 @mongointegration.test
 def setup_database_properly(client):
@@ -125,6 +130,32 @@ def should_handle_auto_dbref(client):
     assert child.parent.__class__.__name__ == "TestModel"
     assert type(child.parent) == TestModel
 
+@mongointegration.test
+def should_handle_auto_dbref_inside_a_list(client):
+    parent = TestModel(test="hellotest")
+    parent.save()
+    child = TestModel(test="testing", parents=[parent], parent=parent)
+    child.save()
+
+    child = TestModel.query.find_one({"test": "testing"})
+    print child.parents[0]
+    assert child.parents[0].test == "hellotest"
+    assert child.parents[0].__class__.__name__ == "TestModel"
+    assert type(child.parents[0]) == TestModel
+
+@mongointegration.test
+def should_update():
+    parent = TestModel(test="hellotest")
+    parent.save()
+
+    parent.hello = "test"
+    parent.test = 'Hello'
+    parent.save()
+
+    assert TestModel.query.count() == 1
+    parent = TestModel.query.find()[0]
+    assert parent.hello == "test"
+    assert parent.test == "Hello"
 
 if __name__ == '__main__':
     flask_mongoobject.run()
