@@ -2,7 +2,7 @@
 Flask-MongoObject
 -----------------
 
-access MongoDB from your Flask application
+Access MongoDB from your Flask application
 
 Links
 `````
@@ -22,16 +22,18 @@ setup(
     license='MIT',
     author='dqminh',
     author_email='dqminh89@gmail.com',
-    description='<enter short description here>',
+    description='Access MongoDB from your Flask application',
     long_description=__doc__,
     packages=['flaskext'],
     namespace_packages=['flaskext'],
     zip_safe=False,
     platforms='any',
     install_requires=[
+        'setuptools',
         'Flask',
         'pymongo'
     ],
+    test_suite='mongoobject_test.flask_mongoobject',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',

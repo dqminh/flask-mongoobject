@@ -28,6 +28,8 @@ def setup_app():
 mongounit = Tests()
 mongointegration = Tests(contexts=[setup_app])
 
+flask_mongoobject = Tests([mongounit, mongointegration])
+
 
 @mongointegration.context
 def init_db():
@@ -125,5 +127,4 @@ def should_handle_auto_dbref(client):
 
 
 if __name__ == '__main__':
-    mongounit.run()
-    mongointegration.run()
+    flask_mongoobject.run()
